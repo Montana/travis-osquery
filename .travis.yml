@@ -1,0 +1,168 @@
+---
+sudo: required
+dist: focal
+notifications:
+  slack:
+    on_failure: always
+
+fleet_script_osquery_arm64_tasks : &fleet_script_osquery_arm64_tasks
+      script:
+          - echo "============================================="
+          - echo "=============Installing Osquery debian arm64=============="
+          - wget -q https://pkg.osquery.io/deb/osquery_4.5.1_1.linux.arm64.deb
+          - sudo dpkg -i osquery_4.5.1_1.linux.arm64.deb
+          - sudo osqueryctl start osqueryd
+          - sudo osqueryctl status osqueryd
+          - echo "============================================="
+fleet_script_osquery_tasks : &fleet_script_osquery_tasks
+      script:
+          - echo "============================================="
+          - echo "=============Installing Osquery debian=============="
+          - export OSQUERY_KEY=1484120AC4E9F8A1A577AEEE97A80C63C9D8B80B
+          - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys $OSQUERY_KEY
+          - sudo add-apt-repository 'deb [arch=amd64] https://pkg.osquery.io/deb deb main'
+          - sudo apt update && sudo apt install osquery -y
+          - sudo osqueryctl start osqueryd
+          - sudo osqueryctl status osqueryd
+          - echo "============================================="
+fleet_script_tasks : &fleet_script_tasks
+      script:
+        - python --version
+fleet_install_tasks : &fleet_install_tasks
+      install:
+        - pip install -r requirements.txt
+
+
+matrix:
+  fast_finish: true
+  include:
+
+    - name: "Python 3.7 on focal arm64"
+      os: linux
+      arch: arm64
+      dist: focal
+      language: python
+      # python: 3.7
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+        - python --version
+        - pip install -r requirements.txt
+      script:
+          - echo "============================================="
+          - echo "=============Installing Osquery debian arm64=============="
+          - wget -q https://pkg.osquery.io/deb/osquery_4.5.1_1.linux.arm64.deb
+          - sudo dpkg -i osquery_4.5.1_1.linux.arm64.deb
+          - sudo osqueryctl start osqueryd
+          - sudo osqueryctl status osqueryd
+          - echo "============================================="      
+      after_success:
+        - deactivate
+        
+    - name: "Python 3.7 on focal amd64"
+      os: linux
+      arch: amd64
+      dist: focal
+      language: python
+      python: 3.7
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+        - python --version
+        - pip install -r requirements.txt
+      script:
+          - echo "============================================="
+          - echo "=============Montana's branch installing osquery debian=============="
+          - export OSQUERY_KEY=1484120AC4E9F8A1A577AEEE97A80C63C9D8B80B
+          - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys $OSQUERY_KEY
+          - sudo add-apt-repository 'deb [arch=amd64] https://pkg.osquery.io/deb deb main'
+          - sudo apt update && sudo apt install osquery -y
+          - sudo osqueryctl start osqueryd
+          - sudo osqueryctl status osqueryd
+          - echo "============================================="      
+      after_success:
+        - deactivate
+
+    - name: "Python 3.7 on bionic amd64"
+      os: linux
+      arch: amd64
+      dist: bionic
+      language: python
+      python: 3.7
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+
+      script:
+        - sudo make deploy-linux-debian-amd64
+      after_success:
+        - deactivate
+
+    - name: "Python 3.7 on bionic arm64" 
+      os: linux
+      arch: arm64
+      dist: bionic
+      language: python
+      python: 3.7
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+      script:
+        - sudo make deploy-linux-debian-arm64
+      after_success:
+        - deactivate
+  
+
+    - name: "Python 3.7 on xenial amd64"
+      os: linux
+      arch: amd64
+      dist: xenial
+      language: python
+      python: 3.7
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      <<: *fleet_script_osquery_tasks
+      after_success:
+        - deactivate
+
+
+
+    - name: "Python 3.7 on xenial arm64" 
+      os: linux
+      arch: arm64
+      dist: xenial
+      language: python
+      python: 3.7
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p $(which python3) ~venvpy3
+        - source ~venvpy3/bin/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      <<: *fleet_script_osquery_arm64_tasks
+      after_success:
+        - deactivate
+ 
+    - name: "Python 2.7 on xenial"
+      os: linux
+      arch: amd64
+      dist: xenial
+      language: python
+      python: 2.7
+      before_install:
+        - pip install virtualenv
+        - virtualenv -p $(which python2) ~venvpy2
+        - source ~venvpy2/bin/activate
+      <<: *fleet_install_tasks
+      <<: *fleet_script_tasks
+      <<: *fleet_script_osquery_tasks
+      after_success:
+        - deactivate
