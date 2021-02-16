@@ -84,19 +84,3 @@ matrix:
           - echo "============================================="      
       after_success:
         - deactivate
-
-    - name: "Python 3.7 on bionic amd64"
-      os: linux
-      arch: amd64
-      dist: bionic
-      language: python
-      python: 3.7
-      before_install:
-        - pip3 install virtualenv
-        - virtualenv -p $(which python3) ~venvpy3
-        - source ~venvpy3/bin/activate
-
-      script:
-        - sudo make deploy-linux-debian-amd64
-      after_success:
-        - deactivate
